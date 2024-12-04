@@ -31,6 +31,7 @@ import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
 import type { TRecipientActionAuthTypes } from '../../types/document-auth';
 import { DocumentAccessAuth, ZRecipientAuthOptionsSchema } from '../../types/document-auth';
 import { ZFieldMetaSchema } from '../../types/field-meta';
+import { ZWebhookDocumentSchema } from '../../types/webhook-payload';
 import type { RequestMetadata } from '../../universal/extract-request-metadata';
 import type { CreateDocumentAuditLogDataResponse } from '../../utils/document-audit-logs';
 import { createDocumentAuditLogData } from '../../utils/document-audit-logs';
@@ -40,6 +41,7 @@ import {
   extractDocumentAuthMethods,
 } from '../../utils/document-auth';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
+import { teamGlobalSettingsToBranding } from '../../utils/team-global-settings-to-branding';
 import { formatDocumentsPath } from '../../utils/teams';
 import { sendDocument } from '../document/send-document';
 import { validateFieldAuth } from '../document/validate-field-auth';
@@ -91,11 +93,16 @@ export const createDocumentFromDirectTemplate = async ({
       templateDocumentData: true,
       templateMeta: true,
       User: true,
+      team: {
+        include: {
+          teamGlobalSettings: true,
+        },
+      },
     },
   });
 
   if (!template?.directLink?.enabled) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, 'Invalid or missing template');
+    throw new AppError(AppErrorCode.INVALID_REQUEST, { message: 'Invalid or missing template' });
   }
 
   const { Recipient: recipients, directLink, User: templateOwner } = template;
@@ -105,15 +112,19 @@ export const createDocumentFromDirectTemplate = async ({
   );
 
   if (!directTemplateRecipient || directTemplateRecipient.role === RecipientRole.CC) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, 'Invalid or missing direct recipient');
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: 'Invalid or missing direct recipient',
+    });
   }
 
   if (template.updatedAt.getTime() !== templateUpdatedAt.getTime()) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, 'Template no longer matches');
+    throw new AppError(AppErrorCode.INVALID_REQUEST, { message: 'Template no longer matches' });
   }
 
   if (user && user.email !== directRecipientEmail) {
-    throw new AppError(AppErrorCode.INVALID_REQUEST, 'Email must match if you are logged in');
+    throw new AppError(AppErrorCode.INVALID_REQUEST, {
+      message: 'Email must match if you are logged in',
+    });
   }
 
   const { derivedRecipientAccessAuth, documentAuthOption: templateAuthOptions } =
@@ -130,7 +141,7 @@ export const createDocumentFromDirectTemplate = async ({
     .exhaustive();
 
   if (!isAccessAuthValid) {
-    throw new AppError(AppErrorCode.UNAUTHORIZED, 'You must be logged in');
+    throw new AppError(AppErrorCode.UNAUTHORIZED, { message: 'You must be logged in' });
   }
 
   const directTemplateRecipientAuthOptions = ZRecipientAuthOptionsSchema.parse(
@@ -145,7 +156,8 @@ export const createDocumentFromDirectTemplate = async ({
   const metaDateFormat = template.templateMeta?.dateFormat || DEFAULT_DOCUMENT_DATE_FORMAT;
   const metaEmailMessage = template.templateMeta?.message || '';
   const metaEmailSubject = template.templateMeta?.subject || '';
-  const metaLanguage = template.templateMeta?.language;
+  const metaLanguage =
+    template.templateMeta?.language ?? template.team?.teamGlobalSettings?.documentLanguage;
   const metaSigningOrder = template.templateMeta?.signingOrder || DocumentSigningOrder.PARALLEL;
 
   // Associate, validate and map to a query every direct template recipient field with the provided fields.
@@ -156,7 +168,9 @@ export const createDocumentFromDirectTemplate = async ({
       );
 
       if (!signedFieldValue) {
-        throw new AppError(AppErrorCode.INVALID_BODY, 'Invalid, missing or changed fields');
+        throw new AppError(AppErrorCode.INVALID_BODY, {
+          message: 'Invalid, missing or changed fields',
+        });
       }
 
       if (templateField.type === FieldType.NAME && directRecipientName === undefined) {
@@ -237,6 +251,7 @@ export const createDocumentFromDirectTemplate = async ({
         createdAt: initialRequestTime,
         status: DocumentStatus.PENDING,
         externalId: directTemplateExternalId,
+        visibility: template.team?.teamGlobalSettings?.documentVisibility,
         documentDataId: documentData.id,
         authOptions: createDocumentAuthOptions({
           globalAccessAuth: templateAuthOptions.globalAccessAuth,
@@ -275,6 +290,7 @@ export const createDocumentFromDirectTemplate = async ({
             subject: metaEmailSubject,
             language: metaLanguage,
             signingOrder: metaSigningOrder,
+            distributionMethod: template.templateMeta?.distributionMethod,
           },
         },
       },
@@ -533,9 +549,13 @@ export const createDocumentFromDirectTemplate = async ({
       assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000',
     });
 
+    const branding = template.team?.teamGlobalSettings
+      ? teamGlobalSettingsToBranding(template.team.teamGlobalSettings)
+      : undefined;
+
     const [html, text] = await Promise.all([
-      renderEmailWithI18N(emailTemplate, { lang: metaLanguage }),
-      renderEmailWithI18N(emailTemplate, { lang: metaLanguage, plainText: true }),
+      renderEmailWithI18N(emailTemplate, { lang: metaLanguage, branding }),
+      renderEmailWithI18N(emailTemplate, { lang: metaLanguage, branding, plainText: true }),
     ]);
 
     const i18n = await getI18nInstance(metaLanguage);
@@ -572,7 +592,7 @@ export const createDocumentFromDirectTemplate = async ({
       requestMetadata,
     });
 
-    const updatedDocument = await prisma.document.findFirstOrThrow({
+    const createdDocument = await prisma.document.findFirstOrThrow({
       where: {
         id: documentId,
       },
@@ -584,9 +604,9 @@ export const createDocumentFromDirectTemplate = async ({
 
     await triggerWebhook({
       event: WebhookTriggerEvents.DOCUMENT_SIGNED,
-      data: updatedDocument,
-      userId: updatedDocument.userId,
-      teamId: updatedDocument.teamId ?? undefined,
+      data: ZWebhookDocumentSchema.parse(createdDocument),
+      userId: template.userId,
+      teamId: template.teamId ?? undefined,
     });
   } catch (err) {
     console.error('[CREATE_DOCUMENT_FROM_DIRECT_TEMPLATE]:', err);

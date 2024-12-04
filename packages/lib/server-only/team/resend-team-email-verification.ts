@@ -33,20 +33,22 @@ export const resendTeamEmailVerification = async ({
         },
         include: {
           emailVerification: true,
+          teamGlobalSettings: true,
         },
       });
 
       if (!team) {
-        throw new AppError('TeamNotFound', 'User is not a member of the team.');
+        throw new AppError('TeamNotFound', {
+          message: 'User is not a member of the team.',
+        });
       }
 
       const { emailVerification } = team;
 
       if (!emailVerification) {
-        throw new AppError(
-          'VerificationNotFound',
-          'No team email verification exists for this team.',
-        );
+        throw new AppError('VerificationNotFound', {
+          message: 'No team email verification exists for this team.',
+        });
       }
 
       const { token, expiresAt } = createTokenVerification({ hours: 1 });
@@ -61,7 +63,7 @@ export const resendTeamEmailVerification = async ({
         },
       });
 
-      await sendTeamEmailVerificationEmail(emailVerification.email, token, team.name, team.url);
+      await sendTeamEmailVerificationEmail(emailVerification.email, token, team);
     },
     { timeout: 30_000 },
   );
