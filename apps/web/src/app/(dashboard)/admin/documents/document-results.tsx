@@ -1,27 +1,22 @@
-'use client';
-
-import { useMemo, useState } from 'react';
-
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-import { Loader } from 'lucide-react';
-
-import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounced-value';
-import { useUpdateSearchParams } from '@documenso/lib/client-only/hooks/use-update-search-params';
-import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
-import { trpc } from '@documenso/trpc/react';
-import { Avatar, AvatarFallback } from '@documenso/ui/primitives/avatar';
-import type { DataTableColumnDef } from '@documenso/ui/primitives/data-table';
-import { DataTable } from '@documenso/ui/primitives/data-table';
-import { DataTablePagination } from '@documenso/ui/primitives/data-table-pagination';
-import { Input } from '@documenso/ui/primitives/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
-
-import { DocumentStatus } from '~/components/formatter/document-status';
-
+"use client"; 
+import { useMemo, useState } from "react"; 
+import Link from "next/link"; 
+import { useSearchParams } from "next/navigation"; 
+import { msg } from "@lingui/macro"; 
+import { useLingui } from "@lingui/react"; 
+import { Loader } from "lucide-react"; 
+import { useDebouncedValue } from "@documenso/lib/client-only/hooks/use-debounced-value"; 
+import { useUpdateSearchParams } from "@documenso/lib/client-only/hooks/use-update-search-params"; 
+import { extractInitials } from "@documenso/lib/utils/recipient-formatter"; 
+import { trpc } from "@documenso/trpc/react"; 
+import { Avatar, AvatarFallback } from "@documenso/ui/primitives/avatar"; 
+import type { DataTableColumnDef } from "@documenso/ui/primitives/data-table"; 
+import { DataTable } from "@documenso/ui/primitives/data-table"; 
+import { DataTablePagination } from "@documenso/ui/primitives/data-table-pagination"; 
+import { Input } from "@documenso/ui/primitives/input"; 
+import { Tooltip, TooltipContent, TooltipTrigger, } from "@documenso/ui/primitives/tooltip"; 
+import { DocumentStatus } from "~/components/formatter/document-status"; 
+import mixpanel from 'mixpanel-browser'; 
 // export type AdminDocumentResultsProps = {};
 
 export const AdminDocumentResults = () => {
@@ -31,11 +26,15 @@ export const AdminDocumentResults = () => {
 
   const updateSearchParams = useUpdateSearchParams();
 
-  const [term, setTerm] = useState(() => searchParams?.get?.('term') ?? '');
+  const [term, setTerm] = useState(() => searchParams?.get?.("term") ?? "");
   const debouncedTerm = useDebouncedValue(term, 500);
 
-  const page = searchParams?.get?.('page') ? Number(searchParams.get('page')) : undefined;
-  const perPage = searchParams?.get?.('perPage') ? Number(searchParams.get('perPage')) : undefined;
+  const page = searchParams?.get?.("page")
+    ? Number(searchParams.get("page"))
+    : undefined;
+  const perPage = searchParams?.get?.("perPage")
+    ? Number(searchParams.get("perPage"))
+    : undefined;
 
   const { data: findDocumentsData, isLoading: isFindDocumentsLoading } =
     trpc.admin.findDocuments.useQuery(
@@ -60,12 +59,12 @@ export const AdminDocumentResults = () => {
     return [
       {
         header: _(msg`Created`),
-        accessorKey: 'createdAt',
+        accessorKey: "createdAt",
         cell: ({ row }) => i18n.date(row.original.createdAt),
       },
       {
         header: _(msg`Title`),
-        accessorKey: 'title',
+        accessorKey: "title",
         cell: ({ row }) => {
           return (
             <Link
@@ -79,12 +78,12 @@ export const AdminDocumentResults = () => {
       },
       {
         header: _(msg`Status`),
-        accessorKey: 'status',
+        accessorKey: "status",
         cell: ({ row }) => <DocumentStatus status={row.original.status} />,
       },
       {
         header: _(msg`Owner`),
-        accessorKey: 'owner',
+        accessorKey: "owner",
         cell: ({ row }) => {
           const avatarFallbackText = row.original.User.name
             ? extractInitials(row.original.User.name)
@@ -119,11 +118,11 @@ export const AdminDocumentResults = () => {
         },
       },
       {
-        header: 'Last updated',
-        accessorKey: 'updatedAt',
+        header: "Last updated",
+        accessorKey: "updatedAt",
         cell: ({ row }) => i18n.date(row.original.updatedAt),
       },
-    ] satisfies DataTableColumnDef<(typeof results)['data'][number]>[];
+    ] satisfies DataTableColumnDef<(typeof results)["data"][number]>[];
   }, []);
 
   const onPaginationChange = (newPage: number, newPerPage: number) => {
@@ -142,24 +141,22 @@ export const AdminDocumentResults = () => {
         onChange={(e) => setTerm(e.target.value)}
       />
 
-      <div className="relative mt-4">
-        <DataTable
-          columns={columns}
-          data={results.data}
-          perPage={results.perPage ?? 20}
-          currentPage={results.currentPage ?? 1}
-          totalPages={results.totalPages ?? 1}
-          onPaginationChange={onPaginationChange}
-        >
-          {(table) => <DataTablePagination additionalInformation="VisibleCount" table={table} />}
-        </DataTable>
-
-        {isFindDocumentsLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-            <Loader className="h-8 w-8 animate-spin text-gray-500" />
-          </div>
-        )}
-      </div>
+      <div className="relative mt-4"> 
+<button type="button" onClick={() => mixpanel.track('docs_time_filter_applied')}> 
+<span>All Time</span> 
+<svg><!-- SVG content replaced --></svg> 
+</button> 
+<DataTable columns={columns} data={results.data} perPage={results.perPage ?? 20} currentPage={results.currentPage ?? 1} totalPages={results.totalPages ?? 1} onPaginationChange={onPaginationChange} > 
+{(table) => ( 
+<DataTablePagination additionalInformation="VisibleCount" table={table} /> 
+)} 
+</DataTable> 
+{isFindDocumentsLoading && ( 
+<div className="absolute inset-0 flex items-center justify-center bg-white/50"> 
+<Loader className="h-8 w-8 animate-spin text-gray-500" /> 
+</div> 
+)} 
+</div>
     </div>
   );
 };
