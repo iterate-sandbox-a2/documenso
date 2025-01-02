@@ -1,43 +1,46 @@
-'use client';
+"use client"; 
+import mixpanel from 'mixpanel-browser'; 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Trans, msg } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useForm } from "react-hook-form";
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Trans, msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-
-import { RECIPIENT_ROLES_DESCRIPTION } from '@documenso/lib/constants/recipient-roles';
-import { ZDocumentEmailSettingsSchema } from '@documenso/lib/types/document-email';
-import { formatSigningLink } from '@documenso/lib/utils/recipients';
-import type { Field, Recipient } from '@documenso/prisma/client';
+import { RECIPIENT_ROLES_DESCRIPTION } from "@documenso/lib/constants/recipient-roles";
+import { ZDocumentEmailSettingsSchema } from "@documenso/lib/types/document-email";
+import { formatSigningLink } from "@documenso/lib/utils/recipients";
+import type { Field, Recipient } from "@documenso/prisma/client";
 import {
   DocumentDistributionMethod,
   DocumentStatus,
   RecipientRole,
-} from '@documenso/prisma/client';
-import type { DocumentWithData } from '@documenso/prisma/types/document-with-data';
-import { DocumentSendEmailMessageHelper } from '@documenso/ui/components/document/document-send-email-message-helper';
-import { Tabs, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
+} from "@documenso/prisma/client";
+import type { DocumentWithData } from "@documenso/prisma/types/document-with-data";
+import { DocumentSendEmailMessageHelper } from "@documenso/ui/components/document/document-send-email-message-helper";
+import { Tabs, TabsList, TabsTrigger } from "@documenso/ui/primitives/tabs";
 
-import { CopyTextButton } from '../../components/common/copy-text-button';
-import { DocumentEmailCheckboxes } from '../../components/document/document-email-checkboxes';
-import { AvatarWithText } from '../avatar';
-import { FormErrorMessage } from '../form/form-error-message';
-import { Input } from '../input';
-import { Label } from '../label';
-import { useStep } from '../stepper';
-import { Textarea } from '../textarea';
-import { toast } from '../use-toast';
-import { type TAddSubjectFormSchema, ZAddSubjectFormSchema } from './add-subject.types';
+import { CopyTextButton } from "../../components/common/copy-text-button";
+import { DocumentEmailCheckboxes } from "../../components/document/document-email-checkboxes";
+import { AvatarWithText } from "../avatar";
+import { FormErrorMessage } from "../form/form-error-message";
+import { Input } from "../input";
+import { Label } from "../label";
+import { useStep } from "../stepper";
+import { Textarea } from "../textarea";
+import { toast } from "../use-toast";
+import {
+  type TAddSubjectFormSchema,
+  ZAddSubjectFormSchema,
+} from "./add-subject.types";
 import {
   DocumentFlowFormContainerActions,
   DocumentFlowFormContainerContent,
   DocumentFlowFormContainerFooter,
   DocumentFlowFormContainerHeader,
   DocumentFlowFormContainerStep,
-} from './document-flow-root';
-import { ShowFieldItem } from './show-field-item';
-import type { DocumentFlowStep } from './types';
+} from "./document-flow-root";
+import { ShowFieldItem } from "./show-field-item";
+import type { DocumentFlowStep } from "./types";
 
 export type AddSubjectFormProps = {
   documentFlow: DocumentFlowStep;
@@ -67,11 +70,14 @@ export const AddSubjectFormPartial = ({
   } = useForm<TAddSubjectFormSchema>({
     defaultValues: {
       meta: {
-        subject: document.documentMeta?.subject ?? '',
-        message: document.documentMeta?.message ?? '',
+        subject: document.documentMeta?.subject ?? "",
+        message: document.documentMeta?.message ?? "",
         distributionMethod:
-          document.documentMeta?.distributionMethod || DocumentDistributionMethod.EMAIL,
-        emailSettings: ZDocumentEmailSettingsSchema.parse(document?.documentMeta?.emailSettings),
+          document.documentMeta?.distributionMethod ||
+          DocumentDistributionMethod.EMAIL,
+        emailSettings: ZDocumentEmailSettingsSchema.parse(
+          document?.documentMeta?.emailSettings,
+        ),
       },
     },
     resolver: zodResolver(ZAddSubjectFormSchema),
@@ -80,7 +86,9 @@ export const AddSubjectFormPartial = ({
   const GoNextLabel = {
     [DocumentDistributionMethod.EMAIL]: {
       [DocumentStatus.DRAFT]: msg`Send`,
-      [DocumentStatus.PENDING]: recipients.some((recipient) => recipient.sendStatus === 'SENT')
+      [DocumentStatus.PENDING]: recipients.some(
+        (recipient) => recipient.sendStatus === "SENT",
+      )
         ? msg`Resend`
         : msg`Send`,
       [DocumentStatus.COMPLETED]: msg`Update`,
@@ -92,8 +100,8 @@ export const AddSubjectFormPartial = ({
     },
   };
 
-  const distributionMethod = watch('meta.distributionMethod');
-  const emailSettings = watch('meta.emailSettings');
+  const distributionMethod = watch("meta.distributionMethod");
+  const emailSettings = watch("meta.emailSettings");
 
   const onFormSubmit = handleSubmit(onSubmit);
   const { currentStep, totalSteps, previousStep } = useStep();
@@ -108,31 +116,39 @@ export const AddSubjectFormPartial = ({
         <div className="flex flex-col">
           {isDocumentPdfLoaded &&
             fields.map((field, index) => (
-              <ShowFieldItem key={index} field={field} recipients={recipients} />
+              <ShowFieldItem
+                key={index}
+                field={field}
+                recipients={recipients}
+              />
             ))}
 
           <Tabs
             onValueChange={(value) =>
               // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-              setValue('meta.distributionMethod', value as DocumentDistributionMethod)
+              setValue(
+                "meta.distributionMethod",
+                value as DocumentDistributionMethod,
+              )
             }
             value={distributionMethod}
             className="mb-2"
           >
             <TabsList className="w-full">
-              <TabsTrigger className="w-full" value={DocumentDistributionMethod.EMAIL}>
+              <TabsTrigger
+                className="w-full"
+                value={DocumentDistributionMethod.EMAIL}
+              >
                 Email
               </TabsTrigger>
-              <TabsTrigger className="w-full" value={DocumentDistributionMethod.NONE}>
-                None
-              </TabsTrigger>
+              <TabsTrigger className="w-full" value={DocumentDistributionMethod.NONE} onClick={() => mixpanel.track('draft_filter_clicked', { 'document_status': document.status, 'static_status': 'DRAFT' })}> None </TabsTrigger>
             </TabsList>
           </Tabs>
 
           <AnimatePresence mode="wait">
             {distributionMethod === DocumentDistributionMethod.EMAIL && (
               <motion.div
-                key={'Emails'}
+                key={"Emails"}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.3 } }}
                 exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -141,7 +157,8 @@ export const AddSubjectFormPartial = ({
                 <div>
                   <Label htmlFor="subject">
                     <Trans>
-                      Subject <span className="text-muted-foreground">(Optional)</span>
+                      Subject{" "}
+                      <span className="text-muted-foreground">(Optional)</span>
                     </Trans>
                   </Label>
 
@@ -149,16 +166,20 @@ export const AddSubjectFormPartial = ({
                     id="subject"
                     className="bg-background mt-2"
                     disabled={isSubmitting}
-                    {...register('meta.subject')}
+                    {...register("meta.subject")}
                   />
 
-                  <FormErrorMessage className="mt-2" error={errors.meta?.subject} />
+                  <FormErrorMessage
+                    className="mt-2"
+                    error={errors.meta?.subject}
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="message">
                     <Trans>
-                      Message <span className="text-muted-foreground">(Optional)</span>
+                      Message{" "}
+                      <span className="text-muted-foreground">(Optional)</span>
                     </Trans>
                   </Label>
 
@@ -166,13 +187,15 @@ export const AddSubjectFormPartial = ({
                     id="message"
                     className="bg-background mt-2 h-32 resize-none"
                     disabled={isSubmitting}
-                    {...register('meta.message')}
+                    {...register("meta.message")}
                   />
 
                   <FormErrorMessage
                     className="mt-2"
                     error={
-                      typeof errors.meta?.message !== 'string' ? errors.meta?.message : undefined
+                      typeof errors.meta?.message !== "string"
+                        ? errors.meta?.message
+                        : undefined
                     }
                   />
                 </div>
@@ -182,14 +205,14 @@ export const AddSubjectFormPartial = ({
                 <DocumentEmailCheckboxes
                   className="mt-2"
                   value={emailSettings}
-                  onChange={(value) => setValue('meta.emailSettings', value)}
+                  onChange={(value) => setValue("meta.emailSettings", value)}
                 />
               </motion.div>
             )}
 
             {distributionMethod === DocumentDistributionMethod.NONE && (
               <motion.div
-                key={'Links'}
+                key={"Links"}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.3 } }}
                 exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -198,13 +221,16 @@ export const AddSubjectFormPartial = ({
                 {document.status === DocumentStatus.DRAFT ? (
                   <div className="text-muted-foreground py-16 text-center text-sm">
                     <p>
-                      <Trans>We won't send anything to notify recipients.</Trans>
+                      <Trans>
+                        We won't send anything to notify recipients.
+                      </Trans>
                     </p>
 
                     <p className="mt-2">
                       <Trans>
-                        We will generate signing links for with you, which you can send to the
-                        recipients through your method of choice.
+                        We will generate signing links for with you, which you
+                        can send to the recipients through your method of
+                        choice.
                       </Trans>
                     </p>
                   </div>
@@ -222,13 +248,20 @@ export const AddSubjectFormPartial = ({
                         className="flex items-center justify-between px-4 py-3 text-sm"
                       >
                         <AvatarWithText
-                          avatarFallback={recipient.email.slice(0, 1).toUpperCase()}
+                          avatarFallback={recipient.email
+                            .slice(0, 1)
+                            .toUpperCase()}
                           primaryText={
-                            <p className="text-muted-foreground text-sm">{recipient.email}</p>
+                            <p className="text-muted-foreground text-sm">
+                              {recipient.email}
+                            </p>
                           }
                           secondaryText={
                             <p className="text-muted-foreground/70 text-xs">
-                              {_(RECIPIENT_ROLES_DESCRIPTION[recipient.role].roleName)}
+                              {_(
+                                RECIPIENT_ROLES_DESCRIPTION[recipient.role]
+                                  .roleName,
+                              )}
                             </p>
                           }
                         />
@@ -267,7 +300,10 @@ export const AddSubjectFormPartial = ({
       </DocumentFlowFormContainerContent>
 
       <DocumentFlowFormContainerFooter>
-        <DocumentFlowFormContainerStep step={currentStep} maxStep={totalSteps} />
+        <DocumentFlowFormContainerStep
+          step={currentStep}
+          maxStep={totalSteps}
+        />
 
         <DocumentFlowFormContainerActions
           loading={isSubmitting}
