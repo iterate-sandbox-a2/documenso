@@ -1,10 +1,10 @@
-import { Plural, Trans } from '@lingui/macro';
-import type { Table } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { match } from 'ts-pattern';
-
-import { Button } from './button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import { Plural, Trans } from "@lingui/macro";
+import type { Table } from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, } from "lucide-react";
+import { match } from "ts-pattern";
+import { Button } from "./button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "./select";
+import { useAnalytics } from '/code/temp/iterate-sandbox-a2_documenso_main/packages/lib/client-only/hooks/use-analytics';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
@@ -14,26 +14,24 @@ interface DataTablePaginationProps<TData> {
    *
    * Defaults to 'VisibleCount'.
    */
-  additionalInformation?: 'SelectedCount' | 'VisibleCount' | 'None';
+  additionalInformation?: "SelectedCount" | "VisibleCount" | "None";
 }
 
-export function DataTablePagination<TData>({
-  table,
-  additionalInformation = 'VisibleCount',
-}: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({ table, additionalInformation = "VisibleCount", }: DataTablePaginationProps<TData>) {
+  const analytics = useAnalytics();
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-4 px-2">
       <div className="text-muted-foreground flex-1 text-sm">
         {match(additionalInformation)
-          .with('SelectedCount', () => (
+          .with("SelectedCount", () => (
             <span>
               <Trans>
-                {table.getFilteredSelectedRowModel().rows.length} of{' '}
+                {table.getFilteredSelectedRowModel().rows.length} of{" "}
                 {table.getFilteredRowModel().rows.length} row(s) selected.
               </Trans>
             </span>
           ))
-          .with('VisibleCount', () => {
+          .with("VisibleCount", () => {
             const visibleRows = table.getFilteredRowModel().rows.length;
 
             return (
@@ -46,7 +44,7 @@ export function DataTablePagination<TData>({
               </span>
             );
           })
-          .with('None', () => null)
+          .with("None", () => null)
           .exhaustive()}
       </div>
 
@@ -75,20 +73,16 @@ export function DataTablePagination<TData>({
       <div className="flex flex-wrap items-center gap-x-6 gap-y-4 lg:gap-x-8">
         <div className="flex items-center text-sm font-medium md:justify-center">
           <Trans>
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount() || 1}
           </Trans>
         </div>
 
         <div className="flex items-center gap-x-2">
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <span className="sr-only">Go to first page</span>
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
+          <Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex" onClick={() => { analytics.capture('security_tab_accessed'); table.setPageIndex(0); }} disabled={!table.getCanPreviousPage()} >
+  <span className="sr-only">Go to first page</span>
+  <ChevronsLeft className="h-4 w-4" />
+</Button>
           <Button
             variant="outline"
             className="h-8 w-8 p-0"

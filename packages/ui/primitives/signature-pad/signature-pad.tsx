@@ -1,39 +1,32 @@
-'use client';
-
-import type { HTMLAttributes, MouseEvent, PointerEvent, TouchEvent } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-
-import { Caveat } from 'next/font/google';
-
-import { Trans } from '@lingui/macro';
-import { Undo2 } from 'lucide-react';
-import type { StrokeOptions } from 'perfect-freehand';
-import { getStroke } from 'perfect-freehand';
-
-import { unsafe_useEffectOnce } from '@documenso/lib/client-only/hooks/use-effect-once';
-import { Input } from '@documenso/ui/primitives/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@documenso/ui/primitives/select';
-
-import { cn } from '../../lib/utils';
-import { getSvgPathFromStroke } from './helper';
-import { Point } from './point';
+"use client"; 
+import type { HTMLAttributes, MouseEvent, PointerEvent, TouchEvent, } from "react"; 
+import { useEffect, useMemo, useRef, useState } from "react"; 
+import { Caveat } from "next/font/google"; 
+import { Trans } from "@lingui/macro"; 
+import { Undo2 } from "lucide-react"; 
+import type { StrokeOptions } from "perfect-freehand"; 
+import { getStroke } from "perfect-freehand"; 
+import { unsafe_useEffectOnce } from "@documenso/lib/client-only/hooks/use-effect-once"; 
+import { Input } from "@documenso/ui/primitives/input"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@documenso/ui/primitives/select"; 
+import { cn } from "../../lib/utils"; 
+import { getSvgPathFromStroke } from "./helper"; 
+import { Point } from "./point"; 
+import mixpanel from 'mixpanel-browser';
 
 const fontCaveat = Caveat({
-  weight: ['500'],
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-caveat',
+  weight: ["500"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-caveat",
 });
 
 const DPI = 2;
 
-export type SignaturePadProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChange'> & {
+export type SignaturePadProps = Omit<
+  HTMLAttributes<HTMLCanvasElement>,
+  "onChange"
+> & {
   onChange?: (_signatureDataUrl: string | null) => void;
   containerClassName?: string;
   disabled?: boolean;
@@ -56,11 +49,13 @@ export const SignaturePad = ({
   const [isPressed, setIsPressed] = useState(false);
   const [lines, setLines] = useState<Point[][]>([]);
   const [currentLine, setCurrentLine] = useState<Point[]>([]);
-  const [selectedColor, setSelectedColor] = useState('black');
-  const [typedSignature, setTypedSignature] = useState(defaultValue ?? '');
+  const [selectedColor, setSelectedColor] = useState("black");
+  const [typedSignature, setTypedSignature] = useState(defaultValue ?? "");
 
   const perfectFreehandOptions = useMemo(() => {
-    const size = $el.current ? Math.min($el.current.height, $el.current.width) * 0.03 : 10;
+    const size = $el.current
+      ? Math.min($el.current.height, $el.current.width) * 0.03
+      : 10;
 
     return {
       size,
@@ -101,12 +96,12 @@ export const SignaturePad = ({
 
       // Update the canvas here to draw the lines
       if ($el.current) {
-        const ctx = $el.current.getContext('2d');
+        const ctx = $el.current.getContext("2d");
 
         if (ctx) {
           ctx.restore();
           ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
+          ctx.imageSmoothingQuality = "high";
           ctx.fillStyle = selectedColor;
 
           lines.forEach((line) => {
@@ -118,7 +113,9 @@ export const SignaturePad = ({
           });
 
           const pathData = new Path2D(
-            getSvgPathFromStroke(getStroke([...currentLine, point], perfectFreehandOptions)),
+            getSvgPathFromStroke(
+              getStroke([...currentLine, point], perfectFreehandOptions),
+            ),
           );
           ctx.fill(pathData);
         }
@@ -126,7 +123,10 @@ export const SignaturePad = ({
     }
   };
 
-  const onMouseUp = (event: MouseEvent | PointerEvent | TouchEvent, addLine = true) => {
+  const onMouseUp = (
+    event: MouseEvent | PointerEvent | TouchEvent,
+    addLine = true,
+  ) => {
     if (event.cancelable) {
       event.preventDefault();
     }
@@ -145,13 +145,13 @@ export const SignaturePad = ({
     setLines(newLines);
 
     if ($el.current && newLines.length > 0) {
-      const ctx = $el.current.getContext('2d');
+      const ctx = $el.current.getContext("2d");
 
       if (ctx) {
         ctx.restore();
 
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = "high";
         ctx.fillStyle = selectedColor;
 
         newLines.forEach((line) => {
@@ -172,7 +172,7 @@ export const SignaturePad = ({
       event.preventDefault();
     }
 
-    if ('buttons' in event && event.buttons === 1) {
+    if ("buttons" in event && event.buttons === 1) {
       onMouseDown(event);
     }
   };
@@ -187,7 +187,7 @@ export const SignaturePad = ({
 
   const onClearClick = () => {
     if ($el.current) {
-      const ctx = $el.current.getContext('2d');
+      const ctx = $el.current.getContext("2d");
 
       ctx?.clearRect(0, 0, $el.current.width, $el.current.height);
       $imageData.current = null;
@@ -195,14 +195,14 @@ export const SignaturePad = ({
 
     onChange?.(null);
 
-    setTypedSignature('');
+    setTypedSignature("");
     setLines([]);
     setCurrentLine([]);
   };
 
   const renderTypedSignature = () => {
     if ($el.current && typedSignature) {
-      const ctx = $el.current.getContext('2d');
+      const ctx = $el.current.getContext("2d");
 
       if (ctx) {
         const canvasWidth = $el.current.width;
@@ -210,8 +210,8 @@ export const SignaturePad = ({
         const fontFamily = String(fontCaveat.style.fontFamily);
 
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillStyle = selectedColor;
 
         // Calculate the desired width (25ch)
@@ -222,7 +222,7 @@ export const SignaturePad = ({
         ctx.font = `${fontSize}px ${fontFamily}`;
 
         // Measure 10 characters and calculate scale factor
-        const characterWidth = ctx.measureText('m'.repeat(10)).width;
+        const characterWidth = ctx.measureText("m".repeat(10)).width;
         const scaleFactor = desiredWidth / characterWidth;
 
         // Apply scale factor to font size
@@ -244,11 +244,13 @@ export const SignaturePad = ({
     }
   };
 
-  const handleTypedSignatureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTypedSignatureChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const newValue = event.target.value;
     setTypedSignature(newValue);
 
-    if (newValue.trim() !== '') {
+    if (newValue.trim() !== "") {
       onChange?.(newValue);
     } else {
       onChange?.(null);
@@ -256,7 +258,7 @@ export const SignaturePad = ({
   };
 
   useEffect(() => {
-    if (typedSignature.trim() !== '') {
+    if (typedSignature.trim() !== "") {
       renderTypedSignature();
       onChange?.(typedSignature);
     } else {
@@ -280,11 +282,11 @@ export const SignaturePad = ({
 
       // Clear and redraw the canvas
       if ($el.current) {
-        const ctx = $el.current.getContext('2d');
+        const ctx = $el.current.getContext("2d");
         const { width, height } = $el.current;
         ctx?.clearRect(0, 0, width, height);
 
-        if (typeof defaultValue === 'string' && $imageData.current) {
+        if (typeof defaultValue === "string" && $imageData.current) {
           ctx?.putImageData($imageData.current, 0, 0);
         }
 
@@ -312,15 +314,21 @@ export const SignaturePad = ({
   }, []);
 
   unsafe_useEffectOnce(() => {
-    if ($el.current && typeof defaultValue === 'string') {
-      const ctx = $el.current.getContext('2d');
+    if ($el.current && typeof defaultValue === "string") {
+      const ctx = $el.current.getContext("2d");
 
       const { width, height } = $el.current;
 
       const img = new Image();
 
       img.onload = () => {
-        ctx?.drawImage(img, 0, 0, Math.min(width, img.width), Math.min(height, img.height));
+        ctx?.drawImage(
+          img,
+          0,
+          0,
+          Math.min(width, img.width),
+          Math.min(height, img.height),
+        );
 
         const defaultImageData = ctx?.getImageData(0, 0, width, height) || null;
 
@@ -333,20 +341,20 @@ export const SignaturePad = ({
 
   return (
     <div
-      className={cn('relative block', containerClassName, {
-        'pointer-events-none opacity-50': disabled,
+      className={cn("relative block", containerClassName, {
+        "pointer-events-none opacity-50": disabled,
       })}
     >
       <canvas
         ref={$el}
         className={cn(
-          'relative block',
+          "relative block",
           {
-            'dark:hue-rotate-180 dark:invert': selectedColor === 'black',
+            "dark:hue-rotate-180 dark:invert": selectedColor === "black",
           },
           className,
         )}
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: "none" }}
         onPointerMove={(event) => onMouseMove(event)}
         onPointerDown={(event) => onMouseDown(event)}
         onPointerUp={(event) => onMouseUp(event)}
@@ -357,8 +365,8 @@ export const SignaturePad = ({
 
       {allowTypedSignature && (
         <div
-          className={cn('ml-4 pb-1', {
-            'ml-10': lines.length > 0 || typedSignature.length > 0,
+          className={cn("ml-4 pb-1", {
+            "ml-10": lines.length > 0 || typedSignature.length > 0,
           })}
         >
           <Input
@@ -371,7 +379,10 @@ export const SignaturePad = ({
       )}
 
       <div className="text-foreground absolute right-2 top-2 filter">
-        <Select defaultValue={selectedColor} onValueChange={(value) => setSelectedColor(value)}>
+        <Select
+          defaultValue={selectedColor}
+          onValueChange={(value) => setSelectedColor(value)}
+        >
           <SelectTrigger className="h-auto w-auto border-none p-0.5">
             <SelectValue placeholder="" />
           </SelectTrigger>
