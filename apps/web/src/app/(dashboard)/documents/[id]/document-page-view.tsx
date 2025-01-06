@@ -1,51 +1,57 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import mixpanel from 'mixpanel-browser';
 
-import { Plural, Trans } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-import { ChevronLeft, Clock9, Users2 } from 'lucide-react';
-import { match } from 'ts-pattern';
+import { Plural, Trans } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
+import { ChevronLeft, Clock9, Users2 } from "lucide-react";
+import { match } from "ts-pattern";
 
-import { DOCUMENSO_ENCRYPTION_KEY } from '@documenso/lib/constants/crypto';
-import { getRequiredServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
-import { getDocumentById } from '@documenso/lib/server-only/document/get-document-by-id';
-import { getServerComponentFlag } from '@documenso/lib/server-only/feature-flags/get-server-component-feature-flag';
-import { getFieldsForDocument } from '@documenso/lib/server-only/field/get-fields-for-document';
-import { getRecipientsForDocument } from '@documenso/lib/server-only/recipient/get-recipients-for-document';
-import { DocumentVisibility } from '@documenso/lib/types/document-visibility';
-import { symmetricDecrypt } from '@documenso/lib/universal/crypto';
-import { formatDocumentsPath } from '@documenso/lib/utils/teams';
-import { DocumentStatus } from '@documenso/prisma/client';
-import type { Team, TeamEmail } from '@documenso/prisma/client';
-import { TeamMemberRole } from '@documenso/prisma/client';
-import { Badge } from '@documenso/ui/primitives/badge';
-import { Button } from '@documenso/ui/primitives/button';
-import { Card, CardContent } from '@documenso/ui/primitives/card';
-import { LazyPDFViewer } from '@documenso/ui/primitives/lazy-pdf-viewer';
+import { DOCUMENSO_ENCRYPTION_KEY } from "@documenso/lib/constants/crypto";
+import { getRequiredServerComponentSession } from "@documenso/lib/next-auth/get-server-component-session";
+import { getDocumentById } from "@documenso/lib/server-only/document/get-document-by-id";
+import { getServerComponentFlag } from "@documenso/lib/server-only/feature-flags/get-server-component-feature-flag";
+import { getFieldsForDocument } from "@documenso/lib/server-only/field/get-fields-for-document";
+import { getRecipientsForDocument } from "@documenso/lib/server-only/recipient/get-recipients-for-document";
+import { DocumentVisibility } from "@documenso/lib/types/document-visibility";
+import { symmetricDecrypt } from "@documenso/lib/universal/crypto";
+import { formatDocumentsPath } from "@documenso/lib/utils/teams";
+import { DocumentStatus } from "@documenso/prisma/client";
+import type { Team, TeamEmail } from "@documenso/prisma/client";
+import { TeamMemberRole } from "@documenso/prisma/client";
+import { Badge } from "@documenso/ui/primitives/badge";
+import { Button } from "@documenso/ui/primitives/button";
+import { Card, CardContent } from "@documenso/ui/primitives/card";
+import { LazyPDFViewer } from "@documenso/ui/primitives/lazy-pdf-viewer";
 
-import { StackAvatarsWithTooltip } from '~/components/(dashboard)/avatar/stack-avatars-with-tooltip';
-import { DocumentHistorySheet } from '~/components/document/document-history-sheet';
-import { DocumentReadOnlyFields } from '~/components/document/document-read-only-fields';
-import { DocumentRecipientLinkCopyDialog } from '~/components/document/document-recipient-link-copy-dialog';
+import { StackAvatarsWithTooltip } from "~/components/(dashboard)/avatar/stack-avatars-with-tooltip";
+import { DocumentHistorySheet } from "~/components/document/document-history-sheet";
+import { DocumentReadOnlyFields } from "~/components/document/document-read-only-fields";
+import { DocumentRecipientLinkCopyDialog } from "~/components/document/document-recipient-link-copy-dialog";
 import {
   DocumentStatus as DocumentStatusComponent,
   FRIENDLY_STATUS_MAP,
-} from '~/components/formatter/document-status';
+} from "~/components/formatter/document-status";
 
-import { DocumentPageViewButton } from './document-page-view-button';
-import { DocumentPageViewDropdown } from './document-page-view-dropdown';
-import { DocumentPageViewInformation } from './document-page-view-information';
-import { DocumentPageViewRecentActivity } from './document-page-view-recent-activity';
-import { DocumentPageViewRecipients } from './document-page-view-recipients';
+import { DocumentPageViewButton } from "./document-page-view-button";
+import { DocumentPageViewDropdown } from "./document-page-view-dropdown";
+import { DocumentPageViewInformation } from "./document-page-view-information";
+import { DocumentPageViewRecentActivity } from "./document-page-view-recent-activity";
+import { DocumentPageViewRecipients } from "./document-page-view-recipients";
 
 export type DocumentPageViewProps = {
   params: {
     id: string;
   };
-  team?: Team & { teamEmail: TeamEmail | null } & { currentTeamMember: { role: TeamMemberRole } };
+  team?: Team & { teamEmail: TeamEmail | null } & {
+    currentTeamMember: { role: TeamMemberRole };
+  };
 };
 
-export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) => {
+export const DocumentPageView = async ({
+  params,
+  team,
+}: DocumentPageViewProps) => {
   const { id } = params;
   const { _ } = useLingui();
 
@@ -71,7 +77,9 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
 
   const documentVisibility = document?.visibility;
   const currentTeamMemberRole = team?.currentTeamMember?.role;
-  const isRecipient = document?.Recipient.find((recipient) => recipient.email === user.email);
+  const isRecipient = document?.Recipient.find(
+    (recipient) => recipient.email === user.email,
+  );
   let canAccessDocument = true;
 
   if (team && !isRecipient && document?.userId !== user.id) {
@@ -79,14 +87,20 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
       .with([DocumentVisibility.EVERYONE, TeamMemberRole.ADMIN], () => true)
       .with([DocumentVisibility.EVERYONE, TeamMemberRole.MANAGER], () => true)
       .with([DocumentVisibility.EVERYONE, TeamMemberRole.MEMBER], () => true)
-      .with([DocumentVisibility.MANAGER_AND_ABOVE, TeamMemberRole.ADMIN], () => true)
-      .with([DocumentVisibility.MANAGER_AND_ABOVE, TeamMemberRole.MANAGER], () => true)
+      .with(
+        [DocumentVisibility.MANAGER_AND_ABOVE, TeamMemberRole.ADMIN],
+        () => true,
+      )
+      .with(
+        [DocumentVisibility.MANAGER_AND_ABOVE, TeamMemberRole.MANAGER],
+        () => true,
+      )
       .with([DocumentVisibility.ADMIN, TeamMemberRole.ADMIN], () => true)
       .otherwise(() => false);
   }
 
   const isDocumentHistoryEnabled = await getServerComponentFlag(
-    'app_document_page_view_history_sheet',
+    "app_document_page_view_history_sheet",
   );
 
   if (!document || !document.documentData || (team && !canAccessDocument)) {
@@ -103,7 +117,7 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
     const key = DOCUMENSO_ENCRYPTION_KEY;
 
     if (!key) {
-      throw new Error('Missing DOCUMENSO_ENCRYPTION_KEY');
+      throw new Error("Missing DOCUMENSO_ENCRYPTION_KEY");
     }
 
     const securePassword = Buffer.from(
@@ -111,7 +125,7 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
         key,
         data: documentMeta.password,
       }),
-    ).toString('utf-8');
+    ).toString("utf-8");
 
     documentMeta.password = securePassword;
   }
@@ -133,13 +147,17 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
     Recipient: recipients,
   };
 
-  return (
+  mixpanel.track('docs_completed_filter_applied');
+return (
     <div className="mx-auto -mt-4 w-full max-w-screen-xl px-4 md:px-8">
       {document.status === DocumentStatus.PENDING && (
         <DocumentRecipientLinkCopyDialog recipients={recipients} />
       )}
 
-      <Link href={documentRootPath} className="flex items-center text-[#7AC455] hover:opacity-80">
+      <Link
+        href={documentRootPath}
+        className="flex items-center text-[#7AC455] hover:opacity-80"
+      >
         <ChevronLeft className="mr-2 inline-block h-5 w-5" />
         <Trans>Documents</Trans>
       </Link>
@@ -202,12 +220,19 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
           gradient
         >
           <CardContent className="p-2">
-            <LazyPDFViewer document={document} key={documentData.id} documentData={documentData} />
+            <LazyPDFViewer
+              document={document}
+              key={documentData.id}
+              documentData={documentData}
+            />
           </CardContent>
         </Card>
 
         {document.status === DocumentStatus.PENDING && (
-          <DocumentReadOnlyFields fields={fields} documentMeta={documentMeta || undefined} />
+          <DocumentReadOnlyFields
+            fields={fields}
+            documentMeta={documentMeta || undefined}
+          />
         )}
 
         <div className="col-span-12 lg:col-span-6 xl:col-span-5">
@@ -218,23 +243,31 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
                   {_(FRIENDLY_STATUS_MAP[document.status].labelExtended)}
                 </h3>
 
-                <DocumentPageViewDropdown document={documentWithRecipients} team={team} />
+                <DocumentPageViewDropdown
+                  document={documentWithRecipients}
+                  team={team}
+                />
               </div>
 
               <p className="text-muted-foreground mt-2 px-4 text-sm ">
                 {match(document.status)
                   .with(DocumentStatus.COMPLETED, () => (
-                    <Trans>This document has been signed by all recipients</Trans>
+                    <Trans>
+                      This document has been signed by all recipients
+                    </Trans>
                   ))
                   .with(DocumentStatus.DRAFT, () => (
-                    <Trans>This document is currently a draft and has not been sent</Trans>
+                    <Trans>
+                      This document is currently a draft and has not been sent
+                    </Trans>
                   ))
                   .with(DocumentStatus.PENDING, () => {
                     const pendingRecipients = recipients.filter(
-                      (recipient) => recipient.signingStatus === 'NOT_SIGNED',
+                      (recipient) => recipient.signingStatus === "NOT_SIGNED",
                     );
 
-                    return (
+                    mixpanel.track('docs_completed_filter_applied');
+return (
                       <Plural
                         value={pendingRecipients.length}
                         one="Waiting on 1 recipient"
@@ -246,12 +279,18 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
               </p>
 
               <div className="mt-4 border-t px-4 pt-4">
-                <DocumentPageViewButton document={documentWithRecipients} team={team} />
+                <DocumentPageViewButton
+                  document={documentWithRecipients}
+                  team={team}
+                />
               </div>
             </section>
 
             {/* Document information section. */}
-            <DocumentPageViewInformation document={documentWithRecipients} userId={user.id} />
+            <DocumentPageViewInformation
+              document={documentWithRecipients}
+              userId={user.id}
+            />
 
             {/* Recipients section. */}
             <DocumentPageViewRecipients
@@ -260,7 +299,10 @@ export const DocumentPageView = async ({ params, team }: DocumentPageViewProps) 
             />
 
             {/* Recent activity section. */}
-            <DocumentPageViewRecentActivity documentId={document.id} userId={user.id} />
+            <DocumentPageViewRecentActivity
+              documentId={document.id}
+              userId={user.id}
+            />
           </div>
         </div>
       </div>
