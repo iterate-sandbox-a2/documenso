@@ -1,28 +1,20 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
-
-import { Trans } from '@lingui/macro';
-import { FileIcon } from 'lucide-react';
-import { DateTime } from 'luxon';
-
-import { setupI18nSSR } from '@documenso/lib/client-only/providers/i18n.server';
-import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
-import { getServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
-import { getPublicProfileByUrl } from '@documenso/lib/server-only/profile/get-public-profile-by-url';
-import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
-import { formatDirectTemplatePath } from '@documenso/lib/utils/templates';
-import { Avatar, AvatarFallback, AvatarImage } from '@documenso/ui/primitives/avatar';
-import { Button } from '@documenso/ui/primitives/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@documenso/ui/primitives/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
+import Image from "next/image";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Trans } from "@lingui/macro";
+import { FileIcon } from "lucide-react";
+import { DateTime } from "luxon";
+import { setupI18nSSR } from "@documenso/lib/client-only/providers/i18n.server";
+import { NEXT_PUBLIC_WEBAPP_URL } from "@documenso/lib/constants/app";
+import { getServerComponentSession } from "@documenso/lib/next-auth/get-server-component-session";
+import { getPublicProfileByUrl } from "@documenso/lib/server-only/profile/get-public-profile-by-url";
+import { extractInitials } from "@documenso/lib/utils/recipient-formatter";
+import { formatDirectTemplatePath } from "@documenso/lib/utils/templates";
+import { Avatar, AvatarFallback, AvatarImage, } from "@documenso/ui/primitives/avatar";
+import { Button } from "@documenso/ui/primitives/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@documenso/ui/primitives/table";
+import { Tooltip, TooltipContent, TooltipTrigger, } from "@documenso/ui/primitives/tooltip";
+import { useAnalytics } from 'path-to-analytics-hook';
 
 export type PublicProfilePageProps = {
   params: {
@@ -32,22 +24,23 @@ export type PublicProfilePageProps = {
 
 const BADGE_DATA = {
   Premium: {
-    imageSrc: '/static/premium-user-badge.svg',
-    name: 'Premium',
+    imageSrc: "/static/premium-user-badge.svg",
+    name: "Premium",
   },
   EarlySupporter: {
-    imageSrc: '/static/early-supporter-badge.svg',
-    name: 'Early supporter',
+    imageSrc: "/static/early-supporter-badge.svg",
+    name: "Early supporter",
   },
 };
 
-export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
+export default async function PublicProfilePage({ params, }: PublicProfilePageProps) {
+  const analytics = useAnalytics();
   await setupI18nSSR();
 
   const { url: profileUrl } = params;
 
   if (!profileUrl) {
-    redirect('/');
+    redirect("/");
   }
 
   const publicProfile = await getPublicProfileByUrl({
@@ -78,7 +71,9 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         </Avatar>
 
         <div className="mt-4 flex flex-row items-center justify-center">
-          <h2 className="text-xl font-semibold md:text-2xl">{publicProfile.name}</h2>
+          <h2 className="text-xl font-semibold md:text-2xl">
+            {publicProfile.name}
+          </h2>
 
           {publicProfile.badge && (
             <Tooltip>
@@ -107,7 +102,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                   </p>
                   <p className="text-muted-foreground mt-0.5 text-sm">
                     <Trans>
-                      Since {DateTime.fromJSDate(publicProfile.badge.since).toFormat('LLL ‘yy')}
+                      Since{" "}
+                      {DateTime.fromJSDate(publicProfile.badge.since).toFormat(
+                        "LLL ‘yy",
+                      )}
                     </Trans>
                   </p>
                 </div>
@@ -117,7 +115,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         </div>
 
         <div className="text-muted-foreground mt-4 space-y-1">
-          {(profile.bio ?? '').split('\n').map((line, index) => (
+          {(profile.bio ?? "").split("\n").map((line, index) => (
             <p
               key={index}
               className="max-w-[60ch] whitespace-pre-wrap break-words text-center text-sm"
@@ -132,23 +130,25 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         <div className="mt-4 w-full max-w-xl border-t pt-4">
           <p className="text-muted-foreground max-w-[60ch] whitespace-pre-wrap break-words text-center text-sm leading-relaxed">
             <Trans>
-              It looks like {publicProfile.name} hasn't added any documents to their profile yet.
-            </Trans>{' '}
+              It looks like {publicProfile.name} hasn't added any documents to
+              their profile yet.
+            </Trans>{" "}
             {!user?.id && (
               <span className="mt-2 inline-block">
                 <Trans>
-                  While waiting for them to do so you can create your own Documenso account and get
-                  started with document signing right away.
+                  While waiting for them to do so you can create your own
+                  Documenso account and get started with document signing right
+                  away.
                 </Trans>
               </span>
             )}
-            {'userId' in profile && user?.id === profile.userId && (
+            {"userId" in profile && user?.id === profile.userId && (
               <span className="mt-2 inline-block">
                 <Trans>
-                  Go to your{' '}
-                  <Link href="/settings/public-profile" className="underline">
+                  Go to your{" "}
+                  <a href="/settings/teams"><button onClick={() => analytics.capture('teams_tab_accessed')}><svg><!-- SVG content replaced --></svg>Teams</button></a>
                     public profile settings
-                  </Link>{' '}
+                  </Link>{" "}
                   to add documents.
                 </Trans>
               </span>
@@ -188,7 +188,11 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                         </div>
 
                         <Button asChild className="w-20">
-                          <Link href={formatDirectTemplatePath(template.directLink.token)}>
+                          <Link
+                            href={formatDirectTemplatePath(
+                              template.directLink.token,
+                            )}
+                          >
                             <Trans>Sign</Trans>
                           </Link>
                         </Button>

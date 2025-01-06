@@ -1,22 +1,23 @@
-import type { Metadata } from 'next';
-
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-
-import { setupI18nSSR } from '@documenso/lib/client-only/providers/i18n.server';
-import { getRequiredServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
-
-import { SettingsHeader } from '~/components/(dashboard)/settings/layout/header';
-import { AvatarImageForm } from '~/components/forms/avatar-image';
-import { ProfileForm } from '~/components/forms/profile';
-
-import { DeleteAccountDialog } from './delete-account-dialog';
+import type { Metadata } from "next";
+import { msg } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
+import { setupI18nSSR } from "@documenso/lib/client-only/providers/i18n.server";
+import { getRequiredServerComponentSession } from "@documenso/lib/next-auth/get-server-component-session";
+import { SettingsHeader } from "~/components/(dashboard)/settings/layout/header";
+import { AvatarImageForm } from "~/components/forms/avatar-image";
+import { ProfileForm } from "~/components/forms/profile";
+import { DeleteAccountDialog } from "./delete-account-dialog";
+import mixpanel from 'mixpanel-browser';
+import { useEffect } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Profile',
+  title: "Profile",
 };
 
 export default async function ProfileSettingsPage() {
+  useEffect(() => {
+    mixpanel.track('profile_tab_accessed');
+  }, []);
   await setupI18nSSR();
 
   const { _ } = useLingui();
