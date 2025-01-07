@@ -1,30 +1,34 @@
-import Link from 'next/link';
+import Link from "next/link";
+import { Trans } from "@lingui/macro";
+import mixpanel from 'mixpanel-browser';
 
-import { Trans } from '@lingui/macro';
+import { NEXT_PUBLIC_WEBAPP_URL } from "@documenso/lib/constants/app";
+import { getRequiredServerComponentSession } from "@documenso/lib/next-auth/get-server-component-session";
+import { findDocuments } from "@documenso/lib/server-only/document/find-documents";
+import type { PeriodSelectorValue } from "@documenso/lib/server-only/document/find-documents";
+import type { GetStatsInput } from "@documenso/lib/server-only/document/get-stats";
+import { getStats } from "@documenso/lib/server-only/document/get-stats";
+import { parseToIntegerArray } from "@documenso/lib/utils/params";
+import { formatDocumentsPath } from "@documenso/lib/utils/teams";
+import type { Team, TeamEmail, TeamMemberRole } from "@documenso/prisma/client";
+import { isExtendedDocumentStatus } from "@documenso/prisma/guards/is-extended-document-status";
+import { ExtendedDocumentStatus } from "@documenso/prisma/types/extended-document-status";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@documenso/ui/primitives/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@documenso/ui/primitives/tabs";
 
-import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
-import { getRequiredServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
-import { findDocuments } from '@documenso/lib/server-only/document/find-documents';
-import type { PeriodSelectorValue } from '@documenso/lib/server-only/document/find-documents';
-import type { GetStatsInput } from '@documenso/lib/server-only/document/get-stats';
-import { getStats } from '@documenso/lib/server-only/document/get-stats';
-import { parseToIntegerArray } from '@documenso/lib/utils/params';
-import { formatDocumentsPath } from '@documenso/lib/utils/teams';
-import type { Team, TeamEmail, TeamMemberRole } from '@documenso/prisma/client';
-import { isExtendedDocumentStatus } from '@documenso/prisma/guards/is-extended-document-status';
-import { ExtendedDocumentStatus } from '@documenso/prisma/types/extended-document-status';
-import { Avatar, AvatarFallback, AvatarImage } from '@documenso/ui/primitives/avatar';
-import { Tabs, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
+import { DocumentSearch } from "~/components/(dashboard)/document-search/document-search";
+import { PeriodSelector } from "~/components/(dashboard)/period-selector/period-selector";
+import { isPeriodSelectorValue } from "~/components/(dashboard)/period-selector/types";
+import { DocumentStatus } from "~/components/formatter/document-status";
 
-import { DocumentSearch } from '~/components/(dashboard)/document-search/document-search';
-import { PeriodSelector } from '~/components/(dashboard)/period-selector/period-selector';
-import { isPeriodSelectorValue } from '~/components/(dashboard)/period-selector/types';
-import { DocumentStatus } from '~/components/formatter/document-status';
-
-import { DocumentsDataTable } from './data-table';
-import { DataTableSenderFilter } from './data-table-sender-filter';
-import { EmptyDocumentState } from './empty-state';
-import { UploadDocument } from './upload-document';
+import { DocumentsDataTable } from "./data-table";
+import { DataTableSenderFilter } from "./data-table-sender-filter";
+import { EmptyDocumentState } from "./empty-state";
+import { UploadDocument } from "./upload-document";
 
 export interface DocumentsPageViewProps {
   searchParams?: {
@@ -35,18 +39,27 @@ export interface DocumentsPageViewProps {
     senderIds?: string;
     search?: string;
   };
-  team?: Team & { teamEmail?: TeamEmail | null } & { currentTeamMember?: { role: TeamMemberRole } };
+  team?: Team & { teamEmail?: TeamEmail | null } & {
+    currentTeamMember?: { role: TeamMemberRole };
+  };
 }
 
-export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPageViewProps) => {
+export const DocumentsPageView = async ({
+  searchParams = {},
+  team,
+}: DocumentsPageViewProps) => {
   const { user } = await getRequiredServerComponentSession();
 
-  const status = isExtendedDocumentStatus(searchParams.status) ? searchParams.status : 'ALL';
-  const period = isPeriodSelectorValue(searchParams.period) ? searchParams.period : '';
+  const status = isExtendedDocumentStatus(searchParams.status)
+    ? searchParams.status
+    : "ALL";
+  const period = isPeriodSelectorValue(searchParams.period)
+    ? searchParams.period
+    : "";
   const page = Number(searchParams.page) || 1;
   const perPage = Number(searchParams.perPage) || 20;
-  const senderIds = parseToIntegerArray(searchParams.senderIds ?? '');
-  const search = searchParams.search || '';
+  const senderIds = parseToIntegerArray(searchParams.senderIds ?? "");
+  const search = searchParams.search || "";
   const currentTeam = team
     ? { id: team.id, url: team.url, teamEmail: team.teamEmail?.email }
     : undefined;
@@ -76,8 +89,8 @@ export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPa
     teamId: team?.id,
     status,
     orderBy: {
-      column: 'createdAt',
-      direction: 'desc',
+      column: "createdAt",
+      direction: "desc",
     },
     page,
     perPage,
@@ -89,10 +102,10 @@ export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPa
   const getTabHref = (value: typeof status) => {
     const params = new URLSearchParams(searchParams);
 
-    params.set('status', value);
+    params.set("status", value);
 
-    if (params.has('page')) {
-      params.delete('page');
+    if (params.has("page")) {
+      params.delete("page");
     }
 
     return `${formatDocumentsPath(team?.url)}?${params.toString()}`;
@@ -107,7 +120,9 @@ export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPa
           {team && (
             <Avatar className="dark:border-border mr-3 h-12 w-12 border-2 border-solid border-white">
               {team.avatarImageId && (
-                <AvatarImage src={`${NEXT_PUBLIC_WEBAPP_URL()}/api/avatar/${team.avatarImageId}`} />
+                <AvatarImage
+                  src={`${NEXT_PUBLIC_WEBAPP_URL()}/api/avatar/${team.avatarImageId}`}
+                />
               )}
               <AvatarFallback className="text-xs text-gray-400">
                 {team.name.slice(0, 1)}
@@ -123,27 +138,16 @@ export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPa
         <div className="-m-1 flex flex-wrap gap-x-4 gap-y-6 overflow-hidden p-1">
           <Tabs value={status} className="overflow-x-auto">
             <TabsList>
-              {[
-                ExtendedDocumentStatus.INBOX,
-                ExtendedDocumentStatus.PENDING,
-                ExtendedDocumentStatus.COMPLETED,
-                ExtendedDocumentStatus.DRAFT,
-                ExtendedDocumentStatus.ALL,
-              ].map((value) => (
-                <TabsTrigger
-                  key={value}
-                  className="hover:text-foreground min-w-[60px]"
-                  value={value}
-                  asChild
-                >
-                  <Link href={getTabHref(value)} scroll={false}>
-                    <DocumentStatus status={value} />
-
-                    {value !== ExtendedDocumentStatus.ALL && (
-                      <span className="ml-1 inline-block opacity-50">{stats[value]}</span>
-                    )}
-                  </Link>
-                </TabsTrigger>
+              {[ ExtendedDocumentStatus.INBOX, ExtendedDocumentStatus.PENDING, ExtendedDocumentStatus.COMPLETED, ExtendedDocumentStatus.DRAFT, ExtendedDocumentStatus.ALL, ].map((value) => ( <TabsTrigger key={value} className="hover:text-foreground min-w-[60px]" value={value} asChild onClick={() => { if (value === ExtendedDocumentStatus.COMPLETED) { mixpanel.track('docs_completed_filter_applied'); } if (value === ExtendedDocumentStatus.PENDING) { mixpanel.track('docs_pending_filter_applied'); } if (value === ExtendedDocumentStatus.DRAFT) { mixpanel.track('docs_draft_filter_applied'); } mixpanel.track('search_documents_clicked'); }}>
+  <Link href={getTabHref(value)} scroll={false}>
+    <DocumentStatus status={value} />
+    {value !== ExtendedDocumentStatus.ALL && (
+      <span className="ml-1 inline-block opacity-50">
+        {stats[value]}
+      </span>
+    )}
+  </Link>
+</TabsTrigger>
               ))}
             </TabsList>
           </Tabs>

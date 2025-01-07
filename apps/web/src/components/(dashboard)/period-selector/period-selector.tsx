@@ -1,20 +1,10 @@
-'use client';
-
-import { useMemo } from 'react';
-
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-
-import { Trans } from '@lingui/macro';
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@documenso/ui/primitives/select';
-
-import { isPeriodSelectorValue } from './types';
+"use client";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Trans } from "@lingui/macro";
+import mixpanel from 'mixpanel-browser';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@documenso/ui/primitives/select";
+import { isPeriodSelectorValue } from "./types";
 
 export const PeriodSelector = () => {
   const pathname = usePathname();
@@ -23,9 +13,9 @@ export const PeriodSelector = () => {
   const router = useRouter();
 
   const period = useMemo(() => {
-    const p = searchParams?.get('period') ?? 'all';
+    const p = searchParams?.get("period") ?? "all";
 
-    return isPeriodSelectorValue(p) ? p : 'all';
+    return isPeriodSelectorValue(p) ? p : "all";
   }, [searchParams]);
 
   const onPeriodChange = (newPeriod: string) => {
@@ -35,14 +25,15 @@ export const PeriodSelector = () => {
 
     const params = new URLSearchParams(searchParams?.toString());
 
-    params.set('period', newPeriod);
+    params.set("period", newPeriod);
 
-    if (newPeriod === '' || newPeriod === 'all') {
-      params.delete('period');
+    if (newPeriod === "" || newPeriod === "all") {
+      params.delete("period");
     }
 
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  mixpanel.track('docs_time_filter_applied', { 'current_period': period, 'selected_period': newPeriod });
+};
 
   return (
     <Select defaultValue={period} onValueChange={onPeriodChange}>
@@ -66,4 +57,5 @@ export const PeriodSelector = () => {
       </SelectContent>
     </Select>
   );
+mixpanel.track('docs_time_filter_applied', { 'current_period': period, 'selected_period': newPeriod });
 };
