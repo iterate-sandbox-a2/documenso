@@ -1,16 +1,14 @@
-'use client';
-
-import Link from 'next/link';
-
-import { Trans } from '@lingui/macro';
-import { Loader } from 'lucide-react';
-import { DateTime } from 'luxon';
-import { match } from 'ts-pattern';
-
-import { DocumentSource } from '@documenso/prisma/client';
-import { trpc } from '@documenso/trpc/react';
-import { cn } from '@documenso/ui/lib/utils';
-import { Button } from '@documenso/ui/primitives/button';
+"use client"; 
+import Link from "next/link"; 
+import { Trans } from "@lingui/macro"; 
+import { Loader } from "lucide-react"; 
+import { DateTime } from "luxon"; 
+import { match } from "ts-pattern"; 
+import { DocumentSource } from "@documenso/prisma/client"; 
+import { trpc } from "@documenso/trpc/react"; 
+import { cn } from "@documenso/ui/lib/utils"; 
+import { Button } from "@documenso/ui/primitives/button"; 
+import mixpanel from 'mixpanel-browser';
 
 export type TemplatePageViewRecentActivityProps = {
   templateId: number;
@@ -23,15 +21,16 @@ export const TemplatePageViewRecentActivity = ({
   teamId,
   documentRootPath,
 }: TemplatePageViewRecentActivityProps) => {
-  const { data, isLoading, isLoadingError, refetch } = trpc.document.findDocuments.useQuery({
-    templateId,
-    teamId,
-    orderBy: {
-      column: 'createdAt',
-      direction: 'asc',
-    },
-    perPage: 5,
-  });
+  const { data, isLoading, isLoadingError, refetch } =
+    trpc.document.findDocuments.useQuery({
+      templateId,
+      teamId,
+      orderBy: {
+        column: "createdAt",
+        direction: "asc",
+      },
+      perPage: 5,
+    });
 
   const results = data ?? {
     data: [],
@@ -86,8 +85,8 @@ export const TemplatePageViewRecentActivity = ({
                 <button
                   onClick={() => {
                     window.scrollTo({
-                      top: document.getElementById('documents')?.offsetTop,
-                      behavior: 'smooth',
+                      top: document.getElementById("documents")?.offsetTop,
+                      behavior: "smooth",
                     });
                   }}
                   className="text-foreground/70 hover:text-muted-foreground flex items-center text-xs"
@@ -109,8 +108,10 @@ export const TemplatePageViewRecentActivity = ({
               <li key={document.id} className="relative flex gap-x-4">
                 <div
                   className={cn(
-                    documentIndex === results.data.length - 1 ? 'h-6' : '-bottom-6',
-                    'absolute left-0 top-0 flex w-6 justify-center',
+                    documentIndex === results.data.length - 1
+                      ? "h-6"
+                      : "-bottom-6",
+                    "absolute left-0 top-0 flex w-6 justify-center",
                   )}
                 >
                   <div className="bg-border w-px" />
@@ -125,37 +126,45 @@ export const TemplatePageViewRecentActivity = ({
                   className="text-muted-foreground dark:text-muted-foreground/70 flex-auto truncate py-0.5 text-xs leading-5"
                 >
                   {match(document.source)
-                    .with(DocumentSource.DOCUMENT, DocumentSource.TEMPLATE, () => (
-                      <Trans>
-                        Document created by <span className="font-bold">{document.User.name}</span>
-                      </Trans>
-                    ))
+                    .with(
+                      DocumentSource.DOCUMENT,
+                      DocumentSource.TEMPLATE,
+                      () => (
+                        <Trans>
+                          Document created by{" "}
+                          <span className="font-bold">
+                            {document.User.name}
+                          </span>
+                        </Trans>
+                      ),
+                    )
                     .with(DocumentSource.TEMPLATE_DIRECT_LINK, () => (
                       <Trans>
-                        Document created using a <span className="font-bold">direct link</span>
+                        Document created using a{" "}
+                        <span className="font-bold">direct link</span>
                       </Trans>
                     ))
                     .exhaustive()}
                 </Link>
 
                 <time className="text-muted-foreground dark:text-muted-foreground/70 flex-none py-0.5 text-xs leading-5">
-                  {DateTime.fromJSDate(document.createdAt).toRelative({ style: 'short' })}
+                  {DateTime.fromJSDate(document.createdAt).toRelative({
+                    style: "short",
+                  })}
                 </time>
               </li>
             ))}
           </ul>
 
-          <Button
-            className="mx-4 mb-4"
-            onClick={() => {
-              window.scrollTo({
-                top: document.getElementById('documents')?.offsetTop,
-                behavior: 'smooth',
-              });
-            }}
-          >
-            <Trans>View all related documents</Trans>
-          </Button>
+          <Button className="mx-4 mb-4" onClick={() => { 
+  mixpanel.track('search_menu_item_selected_from_templates_section'); 
+  window.scrollTo({ 
+    top: document.getElementById("documents")?.offsetTop, 
+    behavior: "smooth", 
+  }); 
+}}> 
+  <Trans>View all related documents</Trans> 
+</Button>
         </>
       )}
     </section>
