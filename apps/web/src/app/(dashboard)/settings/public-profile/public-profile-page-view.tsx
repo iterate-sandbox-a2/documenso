@@ -1,32 +1,34 @@
-'use client';
+"use client"; import { useEffect, useMemo, useState } from "react"; import mixpanel from 'mixpanel-browser';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Trans, msg } from "@lingui/macro";
+import { useLingui } from "@lingui/react";
 
-import { Trans, msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-
-import type { FindTemplateRow } from '@documenso/lib/server-only/template/find-templates';
+import type { FindTemplateRow } from "@documenso/lib/server-only/template/find-templates";
 import type {
   Team,
   TeamProfile,
   TemplateDirectLink,
   User,
   UserProfile,
-} from '@documenso/prisma/client';
-import { TemplateType } from '@documenso/prisma/client';
-import { trpc } from '@documenso/trpc/react';
-import { cn } from '@documenso/ui/lib/utils';
-import { Button } from '@documenso/ui/primitives/button';
-import { Switch } from '@documenso/ui/primitives/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
-import { useToast } from '@documenso/ui/primitives/use-toast';
+} from "@documenso/prisma/client";
+import { TemplateType } from "@documenso/prisma/client";
+import { trpc } from "@documenso/trpc/react";
+import { cn } from "@documenso/ui/lib/utils";
+import { Button } from "@documenso/ui/primitives/button";
+import { Switch } from "@documenso/ui/primitives/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@documenso/ui/primitives/tooltip";
+import { useToast } from "@documenso/ui/primitives/use-toast";
 
-import { SettingsHeader } from '~/components/(dashboard)/settings/layout/header';
-import type { TPublicProfileFormSchema } from '~/components/forms/public-profile-form';
-import { PublicProfileForm } from '~/components/forms/public-profile-form';
-import { ManagePublicTemplateDialog } from '~/components/templates/manage-public-template-dialog';
+<a href="/settings/webhooks"><button onClick={() => mixpanel.track('webhooks_tab_accessed')}><svg><!-- SVG content replaced --></svg>Webhooks</button></a>
+import type { TPublicProfileFormSchema } from "~/components/forms/public-profile-form";
+import { PublicProfileForm } from "~/components/forms/public-profile-form";
+import { ManagePublicTemplateDialog } from "~/components/templates/manage-public-template-dialog";
 
-import { PublicTemplatesDataTable } from './public-templates-data-table';
+import { PublicTemplatesDataTable } from "./public-templates-data-table";
 
 export type PublicProfilePageViewOptions = {
   user: User;
@@ -35,7 +37,7 @@ export type PublicProfilePageViewOptions = {
 };
 
 type DirectTemplate = FindTemplateRow & {
-  directLink: Pick<TemplateDirectLink, 'token' | 'enabled'>;
+  directLink: Pick<TemplateDirectLink, "token" | "enabled">;
 };
 
 const userProfileText = {
@@ -52,11 +54,17 @@ const teamProfileText = {
   templatesSubtitle: msg`Show templates in your team public profile for your audience to sign and get started quickly`,
 };
 
-export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePageViewOptions) => {
+export const PublicProfilePageView = ({
+  user,
+  team,
+  profile,
+}: PublicProfilePageViewOptions) => {
   const { _ } = useLingui();
   const { toast } = useToast();
 
-  const [isPublicProfileVisible, setIsPublicProfileVisible] = useState(profile.enabled);
+  const [isPublicProfileVisible, setIsPublicProfileVisible] = useState(
+    profile.enabled,
+  );
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   const { data } = trpc.template.findTemplates.useQuery({
@@ -77,7 +85,8 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
     () =>
       (data?.templates ?? []).filter(
         (template): template is DirectTemplate =>
-          template.directLink?.enabled === true && template.type !== TemplateType.PUBLIC,
+          template.directLink?.enabled === true &&
+          template.type !== TemplateType.PUBLIC,
       ),
     [data],
   );
@@ -106,8 +115,10 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
 
     if (isVisible && !user.url) {
       toast({
-        title: _(msg`You must set a profile URL before enabling your public profile.`),
-        variant: 'destructive',
+        title: _(
+          msg`You must set a profile URL before enabling your public profile.`,
+        ),
+        variant: "destructive",
       });
 
       return;
@@ -122,8 +133,10 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
     } catch {
       toast({
         title: _(msg`Something went wrong`),
-        description: _(msg`We were unable to set your public profile to public. Please try again.`),
-        variant: 'destructive',
+        description: _(
+          msg`We were unable to set your public profile to public. Please try again.`,
+        ),
+        variant: "destructive",
       });
 
       setIsPublicProfileVisible(!isVisible);
@@ -144,10 +157,12 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
           <TooltipTrigger asChild>
             <div
               className={cn(
-                'text-muted-foreground/50 flex flex-row items-center justify-center space-x-2 text-xs',
+                "text-muted-foreground/50 flex flex-row items-center justify-center space-x-2 text-xs",
                 {
-                  '[&>*:first-child]:text-muted-foreground': !isPublicProfileVisible,
-                  '[&>*:last-child]:text-muted-foreground': isPublicProfileVisible,
+                  "[&>*:first-child]:text-muted-foreground":
+                    !isPublicProfileVisible,
+                  "[&>*:last-child]:text-muted-foreground":
+                    isPublicProfileVisible,
                 },
               )}
             >
@@ -175,7 +190,9 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
                 </p>
 
                 <p>
-                  <Trans>Toggle the switch to hide your profile from the public.</Trans>
+                  <Trans>
+                    Toggle the switch to hide your profile from the public.
+                  </Trans>
                 </p>
               </>
             ) : (
@@ -187,7 +204,9 @@ export const PublicProfilePageView = ({ user, team, profile }: PublicProfilePage
                 </p>
 
                 <p>
-                  <Trans>Toggle the switch to show your profile to the public.</Trans>
+                  <Trans>
+                    Toggle the switch to show your profile to the public.
+                  </Trans>
                 </p>
               </>
             )}
