@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import * as amplitude from '@amplitude/analytics-browser';
 import { Trans, msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { Loader } from 'lucide-react';
@@ -127,7 +128,12 @@ export const UploadDocument = ({ className, team }: UploadDocumentProps) => {
       variant: 'destructive',
     });
   };
-
+  useEffect(() => {
+    amplitude.init('297c0d90af978a696ed63af82c336473');
+    amplitude.track('home_page_viewed', {
+      selected_status_filter: status,
+    });
+  }, []);
   return (
     <div className={cn('relative', className)}>
       <DocumentDropzone
