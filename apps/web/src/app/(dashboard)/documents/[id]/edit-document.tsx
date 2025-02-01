@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import * as amplitude from '@amplitude/analytics-browser';
 import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 
@@ -201,8 +202,21 @@ export const EditDocumentForm = ({
     return initialStep;
   });
 
+  useEffect(() => {
+    if (step === 'settings') {
+      amplitude.init('297c0d90af978a696ed63af82c336473');
+      amplitude.track('add_doc_general_details_step_viewed', {
+        step_number: documentFlow[step].stepIndex,
+      });
+    }
+  }, [step, documentFlow]);
+
   const onAddSettingsFormSubmit = async (data: TAddSettingsFormSchema) => {
     try {
+      amplitude.init('297c0d90af978a696ed63af82c336473');
+      amplitude.track('add_doc_general_details_step_completed', {
+        step_number: documentFlow[step].stepIndex?.toString(),
+      });
       const { timezone, dateFormat, redirectUrl, language } = data.meta;
 
       await setSettingsForDocument({
@@ -240,6 +254,11 @@ export const EditDocumentForm = ({
 
   const onAddSignersFormSubmit = async (data: TAddSignersFormSchema) => {
     try {
+      amplitude.init('297c0d90af978a696ed63af82c336473');
+      amplitude.track('add_doc_add_signers_step_complete', {
+        enable_signing_order_toggle_state: data.signingOrder,
+        step_number: documentFlow[step].stepIndex,
+      });
       await Promise.all([
         setSigningOrderForDocument({
           documentId: document.id,
@@ -311,6 +330,10 @@ export const EditDocumentForm = ({
     const { subject, message, distributionMethod, emailSettings } = data.meta;
 
     try {
+      amplitude.init('297c0d90af978a696ed63af82c336473');
+      amplitude.track('add_doc_distribute_doc_step_viewed', {
+        step_number: true,
+      });
       await sendDocument({
         documentId: document.id,
         teamId: team?.id,

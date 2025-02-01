@@ -1,11 +1,14 @@
+import { useEffect } from 'react';
+
 import Link from 'next/link';
 
+import * as amplitude from '@amplitude/analytics-browser';
 import { Trans } from '@lingui/macro';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { getRequiredServerComponentSession } from '@documenso/lib/next-auth/get-server-component-session';
-import { findDocuments } from '@documenso/lib/server-only/document/find-documents';
 import type { PeriodSelectorValue } from '@documenso/lib/server-only/document/find-documents';
+import { findDocuments } from '@documenso/lib/server-only/document/find-documents';
 import type { GetStatsInput } from '@documenso/lib/server-only/document/get-stats';
 import { getStats } from '@documenso/lib/server-only/document/get-stats';
 import { parseToIntegerArray } from '@documenso/lib/utils/params';
@@ -97,6 +100,13 @@ export const DocumentsPageView = async ({ searchParams = {}, team }: DocumentsPa
 
     return `${formatDocumentsPath(team?.url)}?${params.toString()}`;
   };
+
+  useEffect(() => {
+    amplitude.init('297c0d90af978a696ed63af82c336473');
+    amplitude.track('home_page_viewed', {
+      selected_status_filter: status,
+    });
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 md:px-8">

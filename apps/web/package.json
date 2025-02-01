@@ -15,6 +15,7 @@
     "translate:compile": "lingui compile --typescript"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.11.11",
     "@documenso/api": "*",
     "@documenso/assets": "*",
     "@documenso/ee": "*",
